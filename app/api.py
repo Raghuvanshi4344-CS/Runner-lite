@@ -94,7 +94,22 @@ def start_run(body: StartRunBody) -> Run:
         curl -s localhost:8000/api/v1/runs -H 'content-type: application/json' \\
           -d '{"task_id":"<the id you just got>"}'
     """
-    raise HTTPException(501, "POST /runs not implemented — see TASK 5")
+    task = store.get_task(body.task_id)
+    if task is None:
+        raise HTTPException(404, "task not found")
+
+    run = Run(id=_new_id("r"), task_id=task.id, autonomy=task.autonomy)
+    store.add_run(run)
+
+    workspace = Workspace(CONTACTS)
+    deps = AgentDeps(
+        model=MockModelClient(script_for(task.scenario)),
+        workspace=workspace,
+        registry=build_registry(workspace),
+        store=store,
+        settings=SETTINGS,
+    )
+    return run_agent(run, deps)
 
 
 @router.get("/runs/{run_id}", response_model=Run)

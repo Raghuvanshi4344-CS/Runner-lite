@@ -65,4 +65,18 @@ def evaluate_gate(
       - autonomous + write with writes_so_far=2 and max_auto_writes=2 → requires approval
         (the boundary — get this one exactly right; off-by-one here means the budget is 3, not 2)
     """
-    raise NotImplementedError("evaluate_gate — see TASK 1")
+    if tool_kind == "read":
+        return GateDecision(allow=True, reason="read tools are always allowed")
+    if level == "shadow":
+        return GateDecision(allow=True, simulate=True, reason="shadow mode simulates writes")
+    if level == "supervised":
+        return GateDecision(
+            allow=False, requires_approval=True, reason="supervised mode requires approval"
+        )
+    if writes_so_far < max_auto_writes:
+        return GateDecision(allow=True, reason="autonomous write is within budget")
+    return GateDecision(
+        allow=False,
+        requires_approval=True,
+        reason="autonomous write budget is exhausted",
+    )
